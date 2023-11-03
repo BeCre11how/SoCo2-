@@ -47,63 +47,74 @@ def do_power(args, env):
     return do(args[0], env) ** do(args[1], env)
 
 
-def do_print(args, env):
+def do_ausgeben(args, env):
     assert len(args) == 1
     print(do(args[0], env))
 
 
 def do_instanziieren(args, env):
     assert len(args) >= 1
-    assert isinstance(str, args[0])
+    assert isinstance(args[0], str)
     temp = env[args[0]]
     assert isinstance(temp, dict) and temp["name"].startswith("klasse_")
-    count = 1
     res = {"parent": None}
     parent = temp["parent"]
     if parent is not None:
-        x = do("instanziieren", parent, args, env)
+        #fix needed
+        x = do(["instanziieren", env[parent]["konstruktor"], args], env)
         res["parent"] = x
-    for a in temp["attribute"]:
-        if count < len(args) - 1:
-            res[a] = do(args[count], env)
-            count += 1
+    else:
+        count = 1 + len(res["parent"])
+        for x in temp["attributes"]:
+            if count < len(args):
+                res[x] = args[count]
 
     for name, func in temp["funktionen"]:
         res[name] = func
     return res
 
-
-def do_create_class(args, env):
+def do_neue_klasse(args, env):
     assert len(args) > 0
     assert isinstance(args[0], str)
+    c = True
     temp = {
         "name": "klasse_" + args[0],
         "parent": None,
+        "konstruktor": None,
         "attribute": [],
         "funktionen": [],
     }
     if len(args) > 1:
         for i in range(1, len(args)):
-            curr = do(args[i], env)
-            if isinstance(curr, tuple):
-                assert isinstance(str, curr[0])
+            curr = args[i]
+            if isinstance(curr, list):
+                assert isinstance(curr[0], str)
                 if curr[0] == "parent":
                     assert curr[1] in env
                     temp["parent"] = curr[1]
+                elif curr[0] == "konstruktor" and c:
+                    temp["konstruktor"] = curr
+                    c = False
                 else:
-                    temp["funktionen"].append((curr))
+                    temp["funktionen"].append((curr[0], curr[1:]))
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
     env[args[0]] = temp
 
 
-def do_while(args, env):
+def do_solange(args, env):
     assert len(args) == 2
     while args[0]:
         do(args[1], env)
 
-
+def do_wenn(args, env):
+    assert len(args) == 3
+    condition = do(args[0], env)
+    if condition:
+        return do(args[1], env)
+    else:
+        return do(args[2], env)
 def get_index(args, env):
     assert len(args) == 2
     index = do(args[1], env)
@@ -144,6 +155,19 @@ def do_setzen(args, env):
     assert len(args) == 2
     assert isinstance(args[0], str)
     env[args[0]] = do(args[1], env)
+
+def do_setzen_klasse(args, env):
+    assert(len(args)) == 3
+    assert isinstance(args[0], str)
+    assert isinstance(args[1], str)
+    env[args[0]][args[1]] = do(args[2], env)
+def do_abrufen_klasse(args, env):
+    assert len(args) == 2
+    assert isinstance(str,args[0])
+    assert args[0] in env
+    assert args[1] in env[args[0]]
+    return env[args[0]][1]
+
 
 
 # ToDo: pruefen ob in liste of local frames
@@ -219,15 +243,14 @@ operations = {
     for (name, func) in globals().items()
     if name.startswith("do_")
 }
-
+print(len(operations))
 
 def do(expr, env):
     if isinstance(expr, int) or isinstance(expr, float) or isinstance(expr, tuple):
         return expr
 
-    assert expr[0] in operations
-    func = operations[expr[0]]
-    return func(expr[1:], env)
+    assert expr[0] in operations or expr[0].endswith("_new")
+    return operations[expr[0]](expr[1:], env)
 
 
 def main():
@@ -237,7 +260,8 @@ def main():
     assert isinstance(program, list)
     env = {}
     result = do(program, env)
-    print(f"=> {result}")
+
+    print(f"=> {env}")
 
 
 if __name__ == "__main__":
