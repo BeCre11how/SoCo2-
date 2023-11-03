@@ -68,11 +68,11 @@ def do_instanziieren(args, env):
 
     parent_class_name = class_definition["parent"]
     if parent_class_name is not None:
-            parent_instance = do_instanziieren([parent_class_name, args[1:]],env)
+            parent_instance = do_instanziieren([parent_class_name, args[1:]], env)
             instance["parent"] = parent_instance
 
-    constructor = env[class_name + "_new"]
-    if constructor is not None:
+    constructor = class_name in env[class_name + "_new"]
+    if constructor:
         konstruieren(args[1:], instance, env)
 
 
@@ -92,6 +92,7 @@ def do_neue_klasse(args, env):
     temp = {
         "name": "klasse_" + args[0],
         "parent": None,
+        "konstruktor": None,
         "attribute": [],
         "funktionen": [],
     }
@@ -104,9 +105,13 @@ def do_neue_klasse(args, env):
                     assert curr[1] in env
                     temp["parent"] = curr[1]
                 elif curr[0] == "konstruktor":
-                    env[cname] = curr[1:]
+                    env[cname] = []
+                    temp["konstruktor"] = curr
+                    for i in curr[1]:
+                        if isinstance(i, list) and i[0] == "setzen_klasse":
+                            env[cname].append(i[1].replace("klasse_", ""))
                 else:
-                    temp["funktionen"].append((curr[0], curr[1:]))
+                    temp["funktionen"].append((curr[0], curr[1]))
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
