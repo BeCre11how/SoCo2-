@@ -21,7 +21,7 @@ def do_multiplizieren(args, env):
     return do(args[0], env) * do(args[1], env)
 def do_funktion(args, env):
     assert len(args) == 2
-    return {"parameter": do(args[0], env), "aufruf": do(args[1], env)}
+    return {"name": "funktion", "parameter": args[0], "aufruf": args[1]}
 def do_dividieren(args, env):
     assert len(args) == 2
     right = do(args[1])
@@ -38,11 +38,15 @@ def do_print(args, env):
 
 def do_instanziieren(args, env):
     assert len(args) >= 1
-    assert isinstance(str, args[0]) and args[0] in env
+    assert isinstance(str, args[0])
     temp = env[args[0]]
     assert isinstance(temp, dict) and temp["name"].startswith("klasse_")
     count = 1
-    res = {}
+    res = {"parent": None}
+    parent = temp["parent"]
+    if parent is not None:
+        x = do(parent, env)
+        res["parent"] = x
     for a in temp["attribute"]:
         if count < len(args) -1:
             res[a] = do(args[count], env)
@@ -63,7 +67,7 @@ def do_create_class(args, env):
             if isinstance(curr, tuple):
                 assert isinstance(str,curr[0])
                 if curr[0] == "parent":
-                    temp["parent"] =curr[1]
+                    temp["parent"] = curr[1]
                 else:
                     assert isinstance(curr[1], dict)
                     temp["funktionen"].append((curr))
@@ -92,12 +96,12 @@ def set_index(args, env):
     env[args[0]["array"][index]] = do(args[2], env)
 def do_array(args, env):
     assert len(args) == 1
-    return {"size": do(args[0], env),"array" : [], "get": get_index, "set": set_index}
+    return {"name": "array", "size": do(args[0], env), "array" : [], "get": get_index, "set": set_index}
 def do_dictionary(args, env):
     assert len(args) == 0
-    return {"dictionary": {}, "get": get_keyval, "set": set_keyval, "merge": merge_dict}
+    return {"name": "dictionary", "dictionary": {}, "get": get_keyval, "set": set_keyval, "merge": merge_dict}
 
-def do_setzen(args, env):
+def do_setzen(args , env):
     assert len(args) == 2
     assert isinstance(args[0], str)
     env[args[0]] = do(args[1], env)
@@ -105,7 +109,8 @@ def do_setzen(args, env):
 def do_abrufen(args, env):
     assert len(args) == 1
     assert isinstance(args[0], str)
-    return env[args[0]]
+    assert args[0] in env
+    return do(env[args[0]], env)
 def get_keyval(args, env):
     assert len(args) == 2
     assert args[0] in env
@@ -123,36 +128,57 @@ def merge_dict(args, env):
     od = do(args[1], env)
     assert isinstance(d, dict) and isinstance(od, dict)
     return d | od
-        
-#class Array(fixed size, get-set value)
-#class Dict(create, get key val, set key val, merge two dict "|")
+def do_aufrufen(args,env):
+    assert len(args) >= 1
+    name = args[0]
+    arguments = args[1:]
+    # eager evaluation
+    values = [do(arg,env) for arg in arguments]
+    func = env[name]
+    assert isinstance(func, dict)
+    assert func["name"] == "funktion"
+    func_params = func["parameter"]
+    assert len(func_params) == len(values)
+
+    local_frame = dict(zip(func_params,values))
+    curr = "local_frame_of" + name
+    env[curr] = local_frame
+    body = func["aufruf"]
+    result = do(body,env)
+    env[curr] = None
+
+    return result
+def do_abfolge(args, env):
+    assert len(args) > 0
+    for operation in args:
+        result = do(operation,env)
+    return result
+
+def do_subtrahieren(args, env):
+    assert len(args) == 2
+    return do(args[0], env) - do(args[1], env)
+
 
 operations = {name.replace("do_", ""): func for (name, func) in globals().items() if name.startswith("do_")}
-
-
-
-
-
-
-
-
 def do(expr, env):
-    if isinstance(expr,int) or isinstance(expr, float):
+    if isinstance(expr,int) or isinstance(expr, float) or isinstance(expr, tuple):
         return expr
 
-    if expr[0] in operations:
-        return operations[expr[0]](expr[1:], env)
+    assert expr[0] in operations
+    func = operations[expr[0]]
+    return func(expr[1:], env)
 
 
-# def main():
-#     assert len(sys.argv) == 2, "Usage: expr-demo.py filename.gsc"
-#     with open(sys.argv[1], "r") as source_file:
-#         program = json.load(source_file)
-#     assert isinstance(program,list)
-#     result = do(program)
-#     print(f"=> {result}")
+def main():
+     assert len(sys.argv) == 2, "Usage: expr-demo.py filename.gsc"
+     with open(sys.argv[1], "r") as source_file:
+        program = json.load(source_file)
+     assert isinstance(program,list)
+     env = {}
+     result = do(program,env)
+     print(f"=> {env}")
 
 
-# if __name__ == "__main__":
-#     main()  
+if __name__ == "__main__":
+     main()
 
