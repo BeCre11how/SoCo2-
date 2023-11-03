@@ -69,7 +69,6 @@ def do_create_class(args, env):
                 if curr[0] == "parent":
                     temp["parent"] = curr[1]
                 else:
-                    assert isinstance(curr[1], dict)
                     temp["funktionen"].append((curr))
             else:
                 assert isinstance(curr, str)
@@ -109,8 +108,8 @@ def do_setzen(args , env):
 def do_abrufen(args, env):
     assert len(args) == 1
     assert isinstance(args[0], str)
-    assert args[0] in env
-    return do(env[args[0]], env)
+    assert args[0] in env or args[0] in env["local_frame_of"]
+    return do(env[args[0]], env) if args[0] in env else do(env["local_frame_of"][args[0]], env)
 def get_keyval(args, env):
     assert len(args) == 2
     assert args[0] in env
@@ -141,7 +140,7 @@ def do_aufrufen(args,env):
     assert len(func_params) == len(values)
 
     local_frame = dict(zip(func_params,values))
-    curr = "local_frame_of" + name
+    curr = "local_frame_of"
     env[curr] = local_frame
     body = func["aufruf"]
     result = do(body,env)
@@ -176,7 +175,7 @@ def main():
      assert isinstance(program,list)
      env = {}
      result = do(program,env)
-     print(f"=> {env}")
+     print(f"=> {result}")
 
 
 if __name__ == "__main__":
