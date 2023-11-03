@@ -55,33 +55,43 @@ def do_ausgeben(args, env):
 def do_instanziieren(args, env):
     assert len(args) >= 1
     assert isinstance(args[0], str)
-    temp = env[args[0]]
-    assert isinstance(temp, dict) and temp["name"].startswith("klasse_")
-    res = {"parent": None}
-    parent = temp["parent"]
-    if parent is not None:
-        #fix needed
-        x = do(["instanziieren", env[parent]["konstruktor"], args], env)
-        res["parent"] = x
-    else:
-        count = 1 + len(res["parent"])
-        for x in temp["attributes"]:
-            if count < len(args):
-                res[x] = args[count]
+    class_name = args[0]
+    class_definition = env[class_name]
+    assert isinstance(class_definition, dict) and class_definition["name"].startswith("klasse_")
 
-    for name, func in temp["funktionen"]:
-        res[name] = func
-    return res
+    instance = {"parent": None}
 
+    for attribute in class_definition["attribute"]:
+        instance[attribute] = None
+    for name, func in class_definition["funktionen"]:
+        instance[name] = func
+
+    parent_class_name = class_definition["parent"]
+    if parent_class_name is not None:
+        parent_instance = do_instanziieren([parent_class_name, args[1:]],env)
+        instance["parent"] = parent_instance
+
+    constructor = class_definition[class_name + "_new"]
+    if constructor is not None:
+        konstruieren(args, instance)
+
+
+    return instance
+
+def konstruieren(args, instance):
+    for i in instance:
+        if instance[i] != None and i != "parent":
+            instance[i] = args[0]
+            args = args.pop(0)
 def do_neue_klasse(args, env):
     assert len(args) > 0
     assert isinstance(args[0], str)
-    c = True
+    cname = args[0] + "_new"
     temp = {
         "name": "klasse_" + args[0],
         "parent": None,
-        "konstruktor": None,
         "attribute": [],
+        cname : None,
         "funktionen": [],
     }
     if len(args) > 1:
@@ -92,9 +102,9 @@ def do_neue_klasse(args, env):
                 if curr[0] == "parent":
                     assert curr[1] in env
                     temp["parent"] = curr[1]
-                elif curr[0] == "konstruktor" and c:
-                    temp["konstruktor"] = curr
-                    c = False
+                elif curr[0] == "konstruktor":
+                    temp[cname] = curr
+                    env[cname] = curr[1:]
                 else:
                     temp["funktionen"].append((curr[0], curr[1:]))
             else:
@@ -108,13 +118,6 @@ def do_solange(args, env):
     while args[0]:
         do(args[1], env)
 
-def do_wenn(args, env):
-    assert len(args) == 3
-    condition = do(args[0], env)
-    if condition:
-        return do(args[1], env)
-    else:
-        return do(args[2], env)
 def get_index(args, env):
     assert len(args) == 2
     index = do(args[1], env)
@@ -243,14 +246,13 @@ operations = {
     for (name, func) in globals().items()
     if name.startswith("do_")
 }
-print(len(operations))
 
 def do(expr, env):
     if isinstance(expr, int) or isinstance(expr, float) or isinstance(expr, tuple):
         return expr
 
     assert expr[0] in operations or expr[0].endswith("_new")
-    return operations[expr[0]](expr[1:], env)
+    return operations[expr[0]](expr[1:], env) if expr[0] in operations else env[expr[0]]
 
 
 def main():
