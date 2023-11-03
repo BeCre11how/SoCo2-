@@ -68,21 +68,23 @@ def do_instanziieren(args, env):
 
     parent_class_name = class_definition["parent"]
     if parent_class_name is not None:
-        parent_instance = do_instanziieren([parent_class_name, args[1:]],env)
-        instance["parent"] = parent_instance
+            parent_instance = do_instanziieren([parent_class_name, args[1:]],env)
+            instance["parent"] = parent_instance
 
-    constructor = class_definition[class_name + "_new"]
+    constructor = env[class_name + "_new"]
     if constructor is not None:
-        konstruieren(args, instance)
+        konstruieren(args[1:], instance, env)
 
 
     return instance
 
-def konstruieren(args, instance):
+def konstruieren(args, instance, env):
     for i in instance:
-        if instance[i] != None and i != "parent":
-            instance[i] = args[0]
-            args = args.pop(0)
+        if instance[i] is None and i != "parent":
+            assert len(args) > 0
+            instance[i] = do(args[0], env)
+            args = args[1:]
+
 def do_neue_klasse(args, env):
     assert len(args) > 0
     assert isinstance(args[0], str)
@@ -91,7 +93,6 @@ def do_neue_klasse(args, env):
         "name": "klasse_" + args[0],
         "parent": None,
         "attribute": [],
-        cname : None,
         "funktionen": [],
     }
     if len(args) > 1:
@@ -103,7 +104,6 @@ def do_neue_klasse(args, env):
                     assert curr[1] in env
                     temp["parent"] = curr[1]
                 elif curr[0] == "konstruktor":
-                    temp[cname] = curr
                     env[cname] = curr[1:]
                 else:
                     temp["funktionen"].append((curr[0], curr[1:]))
@@ -166,7 +166,7 @@ def do_setzen_klasse(args, env):
     env[args[0]][args[1]] = do(args[2], env)
 def do_abrufen_klasse(args, env):
     assert len(args) == 2
-    assert isinstance(str,args[0])
+    assert isinstance(args[0], str)
     assert args[0] in env
     assert args[1] in env[args[0]]
     return env[args[0]][1]
@@ -211,7 +211,7 @@ def do_aufrufen(args, env):
     assert len(args) >= 1
     name = args[0]
     arguments = args[1:]
-    # eager evaluation
+
     values = [do(arg, env) for arg in arguments]
     func = env[name]
     assert isinstance(func, dict)
@@ -252,7 +252,7 @@ def do(expr, env):
         return expr
 
     assert expr[0] in operations or expr[0].endswith("_new")
-    return operations[expr[0]](expr[1:], env) if expr[0] in operations else env[expr[0]]
+    return operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
 
 
 def main():
