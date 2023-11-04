@@ -1,80 +1,124 @@
-#conten: a python file implementing the interpreter of the LGL 2 language, as described in the 3 exercises below
+# conten: a python file implementing the interpreter of the LGL 2 language, as described in the 3 exercises below
 
 import sys
 import json
-import inspect
-#Basil ish schwul
+
+
+# Basil ish schwul
 def do_addieren(args, env):
     assert len(args) == 2
     return do(args[0], env) + do(args[1], env)
+
 
 def do_absolutwert(args, env):
     assert len(args) == 1
     return abs(do(args[0], env))
 
+
 def do_differenz(args, env):
     assert len(args) == 2
     return do(args[0], env) - do(args[1], env)
 
+
 def do_multiplizieren(args, env):
     assert len(args) == 2
     return do(args[0], env) * do(args[1], env)
+
+
 def do_funktion(args, env):
     assert len(args) == 2
-    return {"parameter": do(args[0], env), "aufruf": do(args[1], env)}
+    return {
+        "name": "funktion",
+        "parameter": args[0],
+        "aufruf": args[1],
+        "local_frame": None,
+    }
+
+
 def do_dividieren(args, env):
     assert len(args) == 2
     right = do(args[1])
     assert right != 0
     return do(args[0], env) / right
 
+
 def do_power(args, env):
     assert len(args) == 2
     return do(args[0], env) ** do(args[1], env)
 
-def do_print(args, env):
+
+def do_ausgeben(args, env):
     assert len(args) == 1
     print(do(args[0], env))
 
+
 def do_instanziieren(args, env):
     assert len(args) >= 1
-    assert isinstance(str, args[0]) and args[0] in env
-    temp = env[args[0]]
-    assert isinstance(temp, dict) and temp["name"].startswith("klasse_")
-    count = 1
-    res = {}
-    for a in temp["attribute"]:
-        if count < len(args) -1:
-            res[a] = do(args[count], env)
-            count += 1
+    assert isinstance(args[0], str)
+    class_name = args[0]
+    class_definition = env[class_name]
+    assert isinstance(class_definition, dict) and class_definition["name"].startswith("klasse_")
 
-    for name, func in temp["funktionen"]:
-        res[name] = func
-    return res
+    instance = {"parent": None}
+
+    for attribute in class_definition["attribute"]:
+        instance[attribute] = None
+    for name, func in class_definition["funktionen"]:
+        instance[name] = func
+
+    parent_class_name = class_definition["parent"]
+    if parent_class_name is not None:
+            parent_instance = do_instanziieren([parent_class_name, args[1:]], env)
+            instance["parent"] = parent_instance
+
+    constructor = class_name in env[class_name + "_new"]
+    if constructor:
+        konstruieren(class_name, args[1:], instance, env)
 
 
-def do_create_class(args, env):
+    return instance
+
+def konstruieren(name, args, instance, env):
+    for i in instance:
+        if instance[i] is None and i != "parent":
+            assert len(args) > 0, f"too few arguments for creation of {name}"
+            instance[i] = do(args[0], env)
+            args = args[1:]
+
+def do_neue_klasse(args, env):
     assert len(args) > 0
     assert isinstance(args[0], str)
-    temp = {"name": "klasse_" + args[0],"parent": None, "attribute": [], "funktionen": []}
+    cname = args[0] + "_new"
+    temp = {
+        "name": "klasse_" + args[0],
+        "parent": None,
+        "konstruktor": None,
+        "attribute": [],
+        "funktionen": [],
+    }
     if len(args) > 1:
-        for i in range(1,len(args)):
-            curr = do(args[i],env)
-            if isinstance(curr, tuple):
-                assert isinstance(str,curr[0])
+        for i in range(1, len(args)):
+            curr = args[i]
+            if isinstance(curr, list):
+                assert isinstance(curr[0], str)
                 if curr[0] == "parent":
-                    temp["parent"] =curr[1]
+                    assert curr[1] in env
+                    temp["parent"] = curr[1]
+                elif curr[0] == "konstruktor":
+                    env[cname] = []
+                    temp["konstruktor"] = curr
+                    for i in curr[1]:
+                        if isinstance(i, list) and i[0] == "setzen_klasse":
+                            env[cname].append(i[1].replace("klasse_", ""))
                 else:
-                    assert isinstance(curr[1], dict)
-                    temp["funktionen"].append((curr))
+                    temp["funktionen"].append((curr[0], curr[1]))
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
     env[args[0]] = temp
 
 
-
-def do_while(args, env):
+def do_solange(args, env):
     assert len(args) == 2
     while args[0]:
         do(args[1], env)
@@ -85,37 +129,80 @@ def get_index(args, env):
     assert isinstance(index, int) and args[1] < env[args[0]["size"]] and index >= 0
     return env[args[0]["array"][index]]
 
+
 def set_index(args, env):
     assert len(args) == 3
     index = do(args[1], env)
     assert isinstance(index, int) and args[1] < env[args[0]["size"]] and index >= 0
     env[args[0]["array"][index]] = do(args[2], env)
+
+
 def do_array(args, env):
     assert len(args) == 1
-    return {"size": do(args[0], env),"array" : [], "get": get_index, "set": set_index}
+    return {
+        "name": "array",
+        "size": do(args[0], env),
+        "array": [],
+        "get": get_index,
+        "set": set_index,
+    }
+
+
 def do_dictionary(args, env):
     assert len(args) == 0
-    return {"dictionary": {}, "get": get_keyval, "set": set_keyval, "merge": merge_dict}
+    return {
+        "name": "dictionary",
+        "dictionary": {},
+        "get": get_keyval,
+        "set": set_keyval,
+        "merge": merge_dict,
+    }
+
 
 def do_setzen(args, env):
     assert len(args) == 2
     assert isinstance(args[0], str)
     env[args[0]] = do(args[1], env)
 
+def do_setzen_klasse(args, env):
+    assert(len(args)) == 3
+    assert isinstance(args[0], str)
+    assert isinstance(args[1], str)
+    env[args[0]][args[1]] = do(args[2], env)
+def do_abrufen_klasse(args, env):
+    assert len(args) == 2
+    assert isinstance(args[0], str)
+    assert args[0] in env
+    assert args[1] in env[args[0]]
+    return env[args[0]][1]
+
+
+
+# ToDo: pruefen ob in liste of local frames
 def do_abrufen(args, env):
     assert len(args) == 1
     assert isinstance(args[0], str)
-    return env[args[0]]
+    assert args[0] in env or args[0] in env["local_frame_of"]
+    return (
+        do(env[args[0]], env)
+        if args[0] in env
+        else do(env["local_frame_of"][args[0]], env)
+    )
+
+
 def get_keyval(args, env):
     assert len(args) == 2
     assert args[0] in env
     key = do(args[1], env)
     return env[args[0]["dictionary"][key]]
+
+
 def set_keyval(args, env):
     assert len(args) == 3
     assert args[0] in env
     key = do(args[1], env)
     env[args[0]["dictionary"][key]] = do(args[2], env)
+
 
 def merge_dict(args, env):
     assert len(args) == 2
@@ -123,36 +210,66 @@ def merge_dict(args, env):
     od = do(args[1], env)
     assert isinstance(d, dict) and isinstance(od, dict)
     return d | od
-        
-#class Array(fixed size, get-set value)
-#class Dict(create, get key val, set key val, merge two dict "|")
 
-operations = {name.replace("do_", ""): func for (name, func) in globals().items() if name.startswith("do_")}
+# ToDo: aufrufen nested functions, ideas for putting functionscope in env , myb list of dictionaries
+def do_aufrufen(args, env):
+    assert len(args) >= 1
+    name = args[0]
+    arguments = args[1:]
+
+    values = [do(arg, env) for arg in arguments]
+    func = env[name]
+    assert isinstance(func, dict)
+    assert func["name"] == "funktion"
+    func_params = func["parameter"]
+    assert len(func_params) == len(values)
+
+    local_frame = dict(zip(func_params, values))
+    curr = "local_frame_of"
+    env[curr] = local_frame
+    body = func["aufruf"]
+    result = do(body, env)
+    env[curr] = None
+
+    return result
 
 
+def do_abfolge(args, env):
+    assert len(args) > 0
+    for operation in args:
+        result = do(operation, env)
+    return result
 
 
+def do_subtrahieren(args, env):
+    assert len(args) == 2
+    return do(args[0], env) - do(args[1], env)
 
 
-
+operations = {
+    name.replace("do_", ""): func
+    for (name, func) in globals().items()
+    if name.startswith("do_")
+}
 
 def do(expr, env):
-    if isinstance(expr,int) or isinstance(expr, float):
+    if isinstance(expr, int) or isinstance(expr, float) or isinstance(expr, tuple):
         return expr
 
-    if expr[0] in operations:
-        return operations[expr[0]](expr[1:], env)
+    assert expr[0] in operations or expr[0].endswith("_new")
+    return operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
 
 
-# def main():
-#     assert len(sys.argv) == 2, "Usage: expr-demo.py filename.gsc"
-#     with open(sys.argv[1], "r") as source_file:
-#         program = json.load(source_file)
-#     assert isinstance(program,list)
-#     result = do(program)
-#     print(f"=> {result}")
+def main():
+    assert len(sys.argv) == 2, "Usage: expr-demo.py filename.gsc"
+    with open(sys.argv[1], "r") as source_file:
+        program = json.load(source_file)
+    assert isinstance(program, list)
+    env = {}
+    result = do(program, env)
+
+    print(f"=> {env}")
 
 
-# if __name__ == "__main__":
-#     main()  
-
+if __name__ == "__main__":
+    main()
