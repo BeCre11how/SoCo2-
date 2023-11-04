@@ -5,7 +5,7 @@
     "setzen",
     "myArray",
     [
-      "array", 5, 
+      "array", 5,
       1,
       2,
       3,
@@ -31,8 +31,8 @@
   [
     "solange",
     [
-      "<",
       ["abrufen", "index"],
+      "<",
       5
     ],
     [
@@ -41,10 +41,10 @@
         "ausgeben",
 
         [
-          "aufrufen_klasse", 
+          "aufrufen_klasse",
           "myArray", "get",
-          
-          
+
+
           ["abrufen", "index"]
         ]
 
@@ -68,7 +68,7 @@
     "setzen",
     "myDict",
     [
-      "wörterbuch",
+      "dictionary",
       "key1", "value1",
       "key2", "value2"
     ]
@@ -76,16 +76,18 @@
   [
     "ausgeben",
     [
-      "abrufen",
-      ["abrufen", "myDict"],
+      "aufrufen_klasse",
+      "myDict",
+      "get",
       "key1"
     ]
   ],
   [
     "ausgeben",
     [
-      "abrufen",
-      ["abrufen", "myDict"],
+      "aufrufen_klasse",
+      "myDict",
+      "get",
       "key2"
     ]
   ]
