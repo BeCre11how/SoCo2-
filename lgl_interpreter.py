@@ -73,15 +73,15 @@ def do_instanziieren(args, env):
 
     constructor = class_name in env[class_name + "_new"]
     if constructor:
-        konstruieren(args[1:], instance, env)
+        konstruieren(class_name, args[1:], instance, env)
 
 
     return instance
 
-def konstruieren(args, instance, env):
+def konstruieren(name, args, instance, env):
     for i in instance:
         if instance[i] is None and i != "parent":
-            assert len(args) > 0
+            assert len(args) > 0, f"too few arguments for creation of {name}"
             instance[i] = do(args[0], env)
             args = args[1:]
 
