@@ -144,7 +144,7 @@ def do_array(args, env):
     return {
         "name": "array",
         "size": do(args[0], env),
-        "array": [do(arg, env) for arg in args[1:]] if len(args) > 1 else [],
+        "array": [do(arg, env) for arg in args[1:]] if len(args) > 1  else [], # koennte array erstellt werden welcher zu gross ist
         "get": get_index,
         "set": set_index,
     }
