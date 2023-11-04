@@ -4,7 +4,7 @@ import sys
 import json
 
 
-# Basil ish schwul
+# Nei
 def do_addieren(args, env):
     assert len(args) == 2
     return do(args[0], env) + do(args[1], env)
@@ -37,7 +37,7 @@ def do_funktion(args, env):
 
 def do_dividieren(args, env):
     assert len(args) == 2
-    right = do(args[1])
+    right = do(args[1], env)
     assert right != 0
     return do(args[0], env) / right
 
@@ -48,6 +48,7 @@ def do_power(args, env):
 
 
 def do_ausgeben(args, env):
+    
     assert len(args) == 1
     print(do(args[0], env))
 
@@ -138,11 +139,11 @@ def set_index(args, env):
 
 
 def do_array(args, env):
-    assert len(args) == 1
+    assert len(args) >= 1
     return {
         "name": "array",
         "size": do(args[0], env),
-        "array": [],
+        "array": [do(arg, env) for arg in args[1:]] if len(args) > 1 else [],
         "get": get_index,
         "set": set_index,
     }
@@ -169,13 +170,35 @@ def do_setzen_klasse(args, env):
     assert isinstance(args[0], str)
     assert isinstance(args[1], str)
     env[args[0]][args[1]] = do(args[2], env)
+    
 def do_abrufen_klasse(args, env):
     assert len(args) == 2
     assert isinstance(args[0], str)
+    assert isinstance(args[1], str)
     assert args[0] in env
     assert args[1] in env[args[0]]
-    return env[args[0]][1]
+    return env[args[0]][args[1]]
 
+def do_aufrufen_klasse(args, env):
+    assert len(args) >= 2
+    classname = args[0]
+    methodname = args[1]
+    arguments = args[2:]
+    
+    values = [do(arg, env) for arg in arguments]
+    func = env[classname][methodname]
+    assert isinstance(func, function)
+    func_params = func["parameter"]
+    assert len(func_params) == len(values)
+
+    local_frame = dict(zip(func_params, values))
+    curr = "local_frame_of"
+    env[curr] = local_frame
+    body = func["aufruf"]
+    result = do(body, env)
+    env[curr] = None
+
+    return result
 
 
 # ToDo: pruefen ob in liste of local frames
@@ -216,7 +239,7 @@ def do_aufrufen(args, env):
     assert len(args) >= 1
     name = args[0]
     arguments = args[1:]
-
+    
     values = [do(arg, env) for arg in arguments]
     func = env[name]
     assert isinstance(func, dict)
@@ -268,7 +291,7 @@ def main():
     env = {}
     result = do(program, env)
 
-    print(f"=> {env}")
+    print(f"=> {result}")
 
 
 if __name__ == "__main__":
