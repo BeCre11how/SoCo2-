@@ -226,7 +226,6 @@ def do_abrufen_klasse(args, env):
     assert name in env
     assert para in env[name]
 
-    print(env[name][para])
     return env[name][para]
 
 
@@ -241,7 +240,7 @@ def do_aufrufen_klasse(args, env):
             [methodname, args[2:] if len(args[2:]) > 1 else args[2]], env
         )
     else:
-        result = methodname(classname, args[2], env)
+        result = methodname([classname, args[2]], env)
     return result
 
 
