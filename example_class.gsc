@@ -139,5 +139,24 @@
                 ]
             ]
         ]
+    ],
+    [
+        "setzen", "ci_name",
+
+        ["circle_new", "ci", "2"]
+
+
+    
+    ],
+    [
+        "setzen", "sq_name",
+
+        ["square_new", "sq", "3"]
+
+
+    
     ]
+
+
 ]
+

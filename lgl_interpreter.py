@@ -1,5 +1,3 @@
-# conten: a python file implementing the interpreter of the LGL 2 language, as described in the 3 exercises below
-
 import sys
 import json
 
@@ -53,6 +51,7 @@ def do_ausgeben(args, env):
 
 
 def do_instanziieren(args, env):
+    env["konstruieren_count"] = 0
     assert len(args) >= 1
     assert isinstance(args[0], str)
     class_name = args[0]
@@ -68,22 +67,35 @@ def do_instanziieren(args, env):
 
     parent_class_name = class_definition["parent"]
     if parent_class_name is not None:
-        parent_instance = do_instanziieren([parent_class_name, args[1:]], env)
+        parent_instance = do_instanziieren([parent_class_name, args[1]], env)
         instance["parent"] = parent_instance
 
+    
     constructor = class_name in env[class_name + "_new"]
     if constructor:
-        konstruieren(class_name, args[1:], instance, env)
+        print("args: ", args)
+        env["konstruieren_count"] += konstruieren(class_name, args[1:], instance, env)
 
     return instance
 
 
 def konstruieren(name, args, instance, env):
+    count = 0
+
+    args = args[0]
+
+    
     for i in instance:
         if instance[i] is None and i != "parent":
+            
             assert len(args) > 0, f"too few arguments for creation of {name}"
-            instance[i] = do(args[0], env)
-            args = args[1:]
+            
+            
+            instance[i] = do(args[count + env["konstruieren_count"]], env)
+            count += 1
+    return count   
+            
+    
 
 
 def do_neue_klasse(args, env):
