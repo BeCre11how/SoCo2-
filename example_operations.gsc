@@ -26,9 +26,9 @@
       "myArray",
       "set",
       [4, 8]
-    
+
   ],
-  
+
     [
     "ausgeben",
     [
@@ -141,12 +141,26 @@
      "aufrufen_klasse", "myDict", "merge", [["abrufen_klasse", "myDict", "dictionary"], ["abrufen_klasse", "myDict2",  "dictionary"]]
     ]
   ],
- 
+    ["ausgeben",
+
+      [
+      "abrufen_klasse",
+      "myDict", "dictionary"
+    ]
+   ],
+
     [
       "aufrufen_klasse",
       "myDict",
       "set",
       ["key2", "value3"]
-    
-  ]
+
+  ],
+  ["ausgeben",
+
+      [
+      "abrufen_klasse",
+      "myDict", "dictionary"
+    ]
+   ]
 ]
