@@ -141,10 +141,11 @@ def set_index(args, env):
 
 def do_array(args, env):
     assert len(args) >= 1
+    assert len(args) -1 < args[0]
     return {
         "name": "array",
         "size": do(args[0], env),
-        "array": [do(arg, env) for arg in args[1:]] if len(args) > 1  else [], # koennte array erstellt werden welcher zu gross ist
+        "array": [do(arg, env) for arg in args[1:]] if len(args) > 1 else [],
         "get": get_index,
         "set": set_index,
     }
@@ -273,7 +274,6 @@ operations = {
 def do(expr, env):
     if isinstance(expr, int) or isinstance(expr, float) or isinstance(expr, tuple) or isinstance(expr, str):
         return expr
-
     assert expr[0] in operations or expr[0].endswith("_new")
     return operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren(
         [expr[0].replace("_new", ""), expr[1:]], env)
@@ -287,7 +287,7 @@ def main():
     env = {}
     result = do(program, env)
 
-    print(f"=> {result}")
+    print(f"=> {env}")
 
 
 if __name__ == "__main__":
