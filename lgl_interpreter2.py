@@ -27,7 +27,7 @@ def do_funktion(args, env):
     assert len(args) == 2
     return {
         "name": "funktion",
-        "parameter": args[0],
+        "parameter": args[0], 
         "aufruf": args[1],
         "local_frame": None,
     }
@@ -119,7 +119,7 @@ def do_neue_klasse(args, env):
                         if isinstance(i, list) and i[0] == "setzen_klasse":
                             env[cname].append(i[1].replace("klasse_", ""))
                 else:
-                    temp["funktionen"].append((curr[0], curr[1]))
+                    temp["funktionen"].append((curr[0], curr[1])) # myb do_funktion(cur[1])
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
