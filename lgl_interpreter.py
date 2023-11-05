@@ -2,7 +2,7 @@ import sys
 import json
 
 
-# Nei gaht ez git is the question
+# Nei gaht ez git is the question gaht au das
 def do_addieren(args, env):
     assert len(args) == 2
     return do(args[0], env) + do(args[1], env)
