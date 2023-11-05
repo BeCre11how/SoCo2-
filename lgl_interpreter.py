@@ -142,7 +142,7 @@ def set_index(args, env):
 
 def do_array(args, env):
     assert len(args) >= 1
-    assert len(args) -1 < args[0]
+    assert len(args) -1 <= args[0]
     return {
         "name": "array",
         "size": do(args[0], env),
