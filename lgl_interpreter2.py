@@ -54,7 +54,6 @@ def do_multiplizieren(args, env):
 
 
 def do_funktion(args, env):
-    print(args)
     assert len(args) == 2
     return {
         "name": "funktion",
@@ -235,8 +234,6 @@ def do_aufrufen_klasse(args, env):
     assert len(args) >= 3
     classname = args[0]
     methodname = find_class_method(classname, args[1], env)
-    print(methodname)
-    print(args[2:])
     assert methodname is not None
 
     if isinstance(methodname, dict):
@@ -287,19 +284,20 @@ def merge_dict(args, env):
 
 # ToDo: aufrufen nested functions, ideas for putting functionscope in env , myb list of dictionaries
 def do_aufrufen(args, env):
-    print(env)
     assert len(args) >= 1
-    print(args[0])
-    name = args[0]
+    name = do(args[0], env) if isinstance(args[0], list) else args[0]
+    print(name)
     arguments = args[1:] if len(args[1:]) > 1 else args[1]
 
     values = [do(arg, env) for arg in arguments]
     func = env[name] if isinstance(name, str) else name
-    print(func)
     assert isinstance(func, dict)
     assert func["name"] == "funktion"
 
     func_params = func["parameter"]
+
+    print(func_params)
+    print(values)
     assert len(func_params) == len(values)
 
     local_frame = dict(zip(func_params, values))
