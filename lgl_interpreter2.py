@@ -1,5 +1,35 @@
-import sys
 import json
+import argparse
+import time
+from functools import wraps
+import csv
+
+# Define the decorator for tracing function calls
+def trace_decorator(trace_file):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            call_id = id(args)
+            start_time = time.time()
+            trace_event(call_id, func.__name__, "start", start_time, trace_file)
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            trace_event(call_id, func.__name__, "stop", end_time, trace_file)
+            return result
+        return wrapper
+    return decorator
+
+# Function to log events to the trace file
+def trace_event(call_id, function_name, event, timestamp, trace_file):
+    with open(trace_file, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([call_id, function_name, event, time.strftime('%Y-%m-%d %H:%M:%S.%f', time.localtime(timestamp))])
+
+# Apply the decorator to all do_ functions
+def apply_trace_to_all_functions(trace_file):
+    for name, func in globals().copy().items():
+        if name.startswith("do_") and callable(func):
+            globals()[name] = trace_decorator(trace_file)(func)
 
 
 # Nei
@@ -24,10 +54,11 @@ def do_multiplizieren(args, env):
 
 
 def do_funktion(args, env):
+    print(args)
     assert len(args) == 2
     return {
         "name": "funktion",
-        "parameter": args[0], 
+        "parameter": args[0],
         "aufruf": args[1],
         "local_frame": None,
     }
@@ -114,12 +145,12 @@ def do_neue_klasse(args, env):
                     temp["parent"] = curr[1]
                 elif curr[0] == "konstruktor":
                     env[cname] = []
-                    temp["konstruktor"] = curr
+                    temp["konstruktor"] = do(curr[1], env)
                     for i in curr[1]:
                         if isinstance(i, list) and i[0] == "setzen_klasse":
                             env[cname].append(i[1].replace("klasse_", ""))
                 else:
-                    temp["funktionen"].append((curr[0], curr[1])) # myb do_funktion(cur[1])
+                    temp["funktionen"].append((curr[0], do(curr[1], env)))
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
@@ -189,23 +220,28 @@ def do_setzen_klasse(args, env):
 
 def do_abrufen_klasse(args, env):
     assert len(args) == 2
-    assert isinstance(args[0], str)
-    assert isinstance(args[1], str)
-    assert args[0] in env
-    assert args[1] in env[args[0]]
+    name = do(args[0],env)
+    para = do(args[1], env)
+    assert isinstance(name, str)
+    assert isinstance(para, str)
+    assert name in env
+    assert para in env[name]
 
-    return env[args[0]][args[1]]
+    print(env[name][para])
+    return env[name][para]
 
 
 def do_aufrufen_klasse(args, env):
     assert len(args) >= 3
     classname = args[0]
     methodname = find_class_method(classname, args[1], env)
+    print(methodname)
+    print(args[2:])
     assert methodname is not None
 
-    if isinstance(methodname, list):
+    if isinstance(methodname, dict):
         result = do_aufrufen(
-            [methodname, args[1:] if len(args[1:]) > 1 else args[1]], env
+            [methodname, args[2:] if len(args[2:]) > 1 else args[2]], env
         )
     else:
         result = methodname(classname, args[2], env)
@@ -251,26 +287,25 @@ def merge_dict(args, env):
 
 # ToDo: aufrufen nested functions, ideas for putting functionscope in env , myb list of dictionaries
 def do_aufrufen(args, env):
+    print(env)
     assert len(args) >= 1
+    print(args[0])
     name = args[0]
     arguments = args[1:] if len(args[1:]) > 1 else args[1]
 
     values = [do(arg, env) for arg in arguments]
     func = env[name] if isinstance(name, str) else name
+    print(func)
+    assert isinstance(func, dict)
+    assert func["name"] == "funktion"
 
-    assert isinstance(func, dict) or isinstance(func, list)
-    assert (
-        func["name"] == "funktion" if isinstance(func, dict) else func[0] == "funktion"
-    )
-    func_params = func["parameter"] if isinstance(func, dict) else func[1]
-    assert len(func_params) == len(values) or len(func_params) + 1 == len(values)
-    if len(func_params) + 1 == len(values):
-        values = values[1:]
+    func_params = func["parameter"]
+    assert len(func_params) == len(values)
 
     local_frame = dict(zip(func_params, values))
     curr = "local_frame_of"
     env[curr] = local_frame
-    body = func["aufruf"] if isinstance(func, dict) else func[2]
+    body = func["aufruf"]
     result = do(body, env)
     env[curr] = None
     return result
@@ -315,23 +350,33 @@ def do(expr, env):
     ):
         return expr
     assert expr[0] in operations or expr[0].endswith("_new")
-    return (
-        operations[expr[0]](expr[1:], env)
-        if expr[0] in operations
-        else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
-    )
+    start = time.time()
+    #logfilestring = print(expr[0], start
+    result = operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
+    #print(expr[0], func, time.time() - start
+    return result
 
 
 def main():
-    assert len(sys.argv) == 2, "Usage: expr-demo.py filename.gsc"
-    with open(sys.argv[1], "r") as source_file:
+    # Set up the argument parser
+    parser = argparse.ArgumentParser(description="Interpret .gsc files with optional tracing.")
+    parser.add_argument("filename", type=str, help="The .gsc file to interpret")
+    parser.add_argument("--trace", type=str, help="Trace file to log the function calls")
+    args = parser.parse_args()
+
+    # If tracing is enabled, set up the tracing decorator for all functions
+    if args.trace:
+        with open(args.trace, 'w', newline='') as file:  # Create or clear the trace file
+            writer = csv.writer(file)
+            writer.writerow(["id", "function_name", "event", "timestamp"])
+        apply_trace_to_all_functions(args.trace)
+
+    with open(args.filename, "r") as source_file:
         program = json.load(source_file)
     assert isinstance(program, list)
     env = {}
     result = do(program, env)
-
-    print(f"=> {env}")
-
+    print(f"=> {result}")
 
 if __name__ == "__main__":
     main()
