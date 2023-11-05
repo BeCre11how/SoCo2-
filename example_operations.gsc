@@ -21,6 +21,22 @@
     ]
   ],
 
+    [
+      "aufrufen_klasse",
+      "myArray",
+      "set",
+      [4, 8]
+    
+  ],
+  
+    [
+    "ausgeben",
+    [
+      "abrufen_klasse",
+      "myArray", "array"
+    ]
+  ],
+
 
 
   [
@@ -90,5 +106,47 @@
       "get",
       "key2"
     ]
+  ],
+   [
+    "setzen",
+    "myDict2",
+    [
+      "dictionary",
+      "key1b", "value1b",
+      "key2b", "value2b"
+    ]
+  ],
+  [
+    "ausgeben",
+    [
+      "aufrufen_klasse",
+      "myDict2",
+      "get",
+      "key1b"
+    ]
+  ],
+  [
+    "ausgeben",
+    [
+      "aufrufen_klasse",
+      "myDict2",
+      "get",
+      "key2b"
+    ]
+  ],
+
+     [
+    "ausgeben",
+    [
+     "aufrufen_klasse", "myDict", "merge", [["abrufen_klasse", "myDict", "dictionary"], ["abrufen_klasse", "myDict2",  "dictionary"]]
+    ]
+  ],
+ 
+    [
+      "aufrufen_klasse",
+      "myDict",
+      "set",
+      ["key2", "value3"]
+    
   ]
 ]

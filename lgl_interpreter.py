@@ -133,10 +133,11 @@ def get_index(args, env):
 
 
 def set_index(args, env):
-    assert len(args) == 3
-    index = do(args[1], env)
-    assert isinstance(index, int) and args[1] < env[args[0]["size"]] and index >= 0
-    env[args[0]]["array"][index] = do(args[2], env)
+    assert len(args) == 2
+    assert isinstance(args[1], list)
+    l = [do(arg, env) for arg in args[1]]
+    assert args[0] in env
+    env[args[0]]["array"][l[0]] = l[1]
 
 
 def do_array(args, env):
@@ -180,17 +181,19 @@ def do_abrufen_klasse(args, env):
     assert isinstance(args[1], str)
     assert args[0] in env
     assert args[1] in env[args[0]]
+    
+    
     return env[args[0]][args[1]]
 
 
 def do_aufrufen_klasse(args, env):
-    assert len(args) == 3
+    assert len(args) >= 3
     classname = args[0]
     methodname = args[1]
 
     func = env[classname][methodname]
     result = func([classname, args[2]], env)
-
+    
     return result
 
 
@@ -214,17 +217,20 @@ def get_keyval(args, env):
 
 
 def set_keyval(args, env):
-    assert len(args) == 3
+    assert len(args) == 2
+    assert isinstance(args[1], list)
+    l = [do(arg, env) for arg in args[1]]
     assert args[0] in env
-    key = do(args[1], env)
-    env[args[0]]["dictionary"][key] = do(args[2], env)
+    env[args[0]]["dictionary"][l[0]] = l[1]
 
 
 def merge_dict(args, env):
     assert len(args) == 2
-    d = do(args[0], env)
-    od = do(args[1], env)
+    d = do(args[1][0], env)
+    od = do(args[1][1], env)
+
     assert isinstance(d, dict) and isinstance(od, dict)
+    
     return d | od
 
 
@@ -287,7 +293,7 @@ def main():
     env = {}
     result = do(program, env)
 
-    print(f"=> {result}")
+    print(f"=> {env}")
 
 
 if __name__ == "__main__":
