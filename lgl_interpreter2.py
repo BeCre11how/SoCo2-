@@ -27,12 +27,13 @@ def trace_decorator(function):
             with open('trace_file.log', mode='a', newline='') as file:
                 writer = csv.writer(file)
                 
-                writer.writerow([id,function.__name__, 'start', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
-                
+                new_function_name = function.__name__[3:] if function.__name__.startswith("do_") else function.__name__
+                    
+                writer.writerow([id,new_function_name, 'start', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
                 result = function(*args, **kwargs)
+                writer.writerow([id,new_function_name, 'stop', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
                 
-                writer.writerow([id,function.__name__, 'stop', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
-
+                
                 return result
         else:
             return function(*args, **kwargs)
