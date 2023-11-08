@@ -72,6 +72,7 @@ def do_multiplizieren(args, env):
 @trace_decorator
 def do_funktion(args, env):
     assert len(args) == 2
+    print(args)
     return {
         "name": "funktion",
         "parameter": args[0],
@@ -254,7 +255,7 @@ def do_aufrufen_klasse(args, env):
 
     if isinstance(methodname, dict):
         result = do_aufrufen(
-            [methodname, args[2:] if len(args[2:]) > 1 else args[2]], env
+            [methodname, args[2:] if len(args) > 3 else args[2]], env
         )
     else:
         result = methodname([classname, args[2]], env)
@@ -303,10 +304,10 @@ def merge_dict(args, env):
 @trace_decorator
 def do_aufrufen(args, env):
     assert len(args) >= 1
-    name = do(args[0], env) if isinstance(args[0], list) else args[0]
+    name = args[0] #do(args[0], env) if isinstance(args[0], list) else args[0]
     print(name)
-    arguments = args[1:] if len(args[1:]) > 1 else args[1]
-
+    arguments = args[1:]
+    print(arguments)
     values = [do(arg, env) for arg in arguments]
     func = env[name] if isinstance(name, str) else name
     assert isinstance(func, dict)
