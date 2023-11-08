@@ -3,7 +3,6 @@ import csv
 from datetime import datetime, timedelta
 
 ##READ FILE
-
 def read_trace_file(trace_file_path):
     with open(trace_file_path, mode='r', newline='') as file:
         csv_reader = csv.DictReader(file)
