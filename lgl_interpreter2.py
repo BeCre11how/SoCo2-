@@ -7,13 +7,9 @@ from functools import wraps
 trace_setting = False
 id_counter = 1
 
-
 def trace_decorator(function):
-    
     global trace_setting
     global id_counter
-    
-    
     if trace_setting:
         with open('trace_file.log', mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -27,24 +23,19 @@ def trace_decorator(function):
             
             id = id_counter
             id_counter += 1
-            # Check if the file exists, if not, write the headers        
+             
             with open('trace_file.log', mode='a', newline='') as file:
                 writer = csv.writer(file)
-                # Write the start event
-                start_time = datetime.now()
-                writer.writerow([id,function.__name__, 'start', start_time.strftime("%Y-%m-%d %H:%M:%S.%f")])
                 
-                # Call the function
+                writer.writerow([id,function.__name__, 'start', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
+                
                 result = function(*args, **kwargs)
                 
-                # Write the stop event
-                stop_time = datetime.now()
-                writer.writerow([id,function.__name__, 'stop', stop_time.strftime("%Y-%m-%d %H:%M:%S.%f")])
+                writer.writerow([id,function.__name__, 'stop', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
 
                 return result
         else:
             return function(*args, **kwargs)
-        
     return wrapper
 
 
