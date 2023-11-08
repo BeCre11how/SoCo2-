@@ -1,59 +1,75 @@
 import sys
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
+
+##READ FILE
 
 def read_trace_file(trace_file_path):
-    """ Reads the trace file and returns a list of events. """
     with open(trace_file_path, mode='r', newline='') as file:
         csv_reader = csv.DictReader(file)
         return list(csv_reader)
 
+##CALCULATE DURATIONS
 def calculate_durations(trace_events):
-    """ Calculates the durations of each function call. """
-    start_times = {}
-    durations = {}
-
+    event_durations = []
+    ids = {}
+    
     for event in trace_events:
-        function_id = event['id']
+        if event["id"] not in ids:
+            start_time = event["timestamp"]
+            ids[event["id"]] = start_time
+            
+        else:
+            event_dict = {}
+            start_time = datetime.strptime(ids.get(event["id"]), "%Y-%m-%d %H:%M:%S.%f")
+            stop_time = datetime.strptime(event["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            duration = (stop_time - start_time).total_seconds() * 1000
+   
+            event_dict["id"], event_dict["function_name"], event_dict["duration"] = event["id"], event["function_name"], duration
+            event_durations.append(event_dict)
+
+    return event_durations
+
+##SORT FUNCTIONS BY NAME AND CALCULATE NUM OF CALLS, AVERAGE TIME AND TOTAL TIME
+def sort_functions_by_name(event_durations):
+    stats_temp = {}
+    stats = []
+    
+    for event in event_durations:
         function_name = event['function_name']
-        timestamp = datetime.strptime(event['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+        duration = event['duration']
+        if function_name in stats_temp:
+            stats_temp[function_name]["Num. of calls"] += 1
+            stats_temp[function_name]["Total Time (ms)"] += duration
+        else:
+            stats_temp[function_name] = {
+                "Num. of calls": 1,
+                "Total Time (ms)": duration,
+            }
+    
+    for function_name in stats_temp:
+        stats_temp[function_name]["Average Time (ms)"] = stats_temp[function_name]["Total Time (ms)"] / stats_temp[function_name]["Num. of calls"]
+        
+    for name in stats_temp:
+        stats.append([name, stats_temp[name]["Num. of calls"], stats_temp[name]["Total Time (ms)"], stats_temp[name]["Average Time (ms)"]])
 
-        if event['event'] == 'start':
-            start_times[function_id] = timestamp
-        elif event['event'] == 'stop' and function_id in start_times:
-            duration = (timestamp - start_times[function_id]).total_seconds() * 1000  # convert to milliseconds
-            if function_name not in durations:
-                durations[function_name] = []
-            durations[function_name].append(duration)
-
-    return durations
-
-def calculate_statistics(durations):
-    """ Calculates the number of calls, total time, and average time per function. """
-    stats = {}
-    for function_name, times in durations.items():
-        total_time = sum(times)
-        num_calls = len(times)
-        avg_time = total_time / num_calls
-        stats[function_name] = {
-            'num_calls': num_calls,
-            'total_time': total_time,
-            'avg_time': avg_time
-        }
     return stats
 
+
+##PRINT REPORT
 def print_report(stats):
-    """ Prints out the report in a table format. """
     print("| Function Name  | Num. of calls | Total Time (ms) | Average Time (ms) |")
     print("|----------------|---------------|-----------------|-------------------|")
-    for function_name, data in stats.items():
-        print(f"| {function_name.ljust(15)}| {str(data['num_calls']).center(15)} | "
-              f"{data['total_time']:>15.3f} | {data['avg_time']:>17.3f} |")
+    for element in stats:
+        print(f"| {element[0].ljust(15)}|{str(element[1]).center(15)}| " 
+              f"{element[2]:>15.3f} | {element[3]:>17.3f} |")
 
+
+##ENTRY POINT TO SCRIPT
 def main(trace_file_path):
     trace_events = read_trace_file(trace_file_path)
-    durations = calculate_durations(trace_events)
-    stats = calculate_statistics(durations)
+    event_durations = calculate_durations(trace_events)
+    stats = sort_functions_by_name(event_durations)
     print_report(stats)
 
 if __name__ == "__main__":
