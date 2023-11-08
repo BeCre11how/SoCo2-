@@ -58,10 +58,10 @@ def sort_functions_by_name(event_durations):
 
 ##PRINT REPORT
 def print_report(stats):
-    print("| Function Name  | Num. of calls | Total Time (ms) | Average Time (ms) |")
-    print("|----------------|---------------|-----------------|-------------------|")
+    print("| Function Name            | Num. of calls | Total Time (ms) | Average Time (ms) |")
+    print("|--------------------------|---------------|-----------------|-------------------|")
     for element in stats:
-        print(f"| {element[0].ljust(15)}|{str(element[1]).center(15)}| " 
+        print(f"| {element[0].ljust(25)}|{str(element[1]).center(15)}| " 
               f"{element[2]:>15.3f} | {element[3]:>17.3f} |")
 
 
