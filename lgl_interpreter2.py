@@ -1,19 +1,17 @@
+###Imports
 import json
 import argparse
 import csv
 from datetime import datetime
 from functools import wraps
 
+
+###Define decorator for tracing
 trace_setting = False
 id_counter = 1
-
-
 def trace_decorator(function):
-    
     global trace_setting
     global id_counter
-    
-    
     if trace_setting:
         with open('trace_file.log', mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -24,31 +22,21 @@ def trace_decorator(function):
         global trace_setting
         global id_counter
         if trace_setting:
-            
             id = id_counter
             id_counter += 1
-            # Check if the file exists, if not, write the headers        
             with open('trace_file.log', mode='a', newline='') as file:
                 writer = csv.writer(file)
-                # Write the start event
-                start_time = datetime.now()
-                writer.writerow([id,function.__name__, 'start', start_time.strftime("%Y-%m-%d %H:%M:%S.%f")])
-                
-                # Call the function
+                new_function_name = function.__name__[3:] if function.__name__.startswith("do_") else function.__name__
+                writer.writerow([id,new_function_name, 'start', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
                 result = function(*args, **kwargs)
-                
-                # Write the stop event
-                stop_time = datetime.now()
-                writer.writerow([id,function.__name__, 'stop', stop_time.strftime("%Y-%m-%d %H:%M:%S.%f")])
-
+                writer.writerow([id,new_function_name, 'stop', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
                 return result
         else:
             return function(*args, **kwargs)
-        
     return wrapper
 
 
-# Nei
+###actual lgl_interpreter script
 @trace_decorator
 def do_addieren(args, env):
     assert len(args) == 2
@@ -374,8 +362,8 @@ def do(expr, env):
     return result
 
 
+###Entry point to script
 def main():
-    # Set up the argument parser
     parser = argparse.ArgumentParser(description="Interpret .gsc files with optional tracing.")
     parser.add_argument("filename", type=str, help="The .gsc file to interpret")
     parser.add_argument("--trace", type=str, help="Enable tracing and specify the trace file.")
