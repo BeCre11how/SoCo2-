@@ -354,6 +354,13 @@ def do(expr, env):
         or isinstance(expr, str)
     ):
         return expr
+    
+    ##added this to help with bugfixxing
+    print("Current expression:", expr[0])
+    print("Available operations:", operations.keys())
+    assert expr[0] in operations or expr[0].endswith("_new"), f"Invalid operation: {expr[0]}"
+    ##end of this
+
     assert expr[0] in operations or expr[0].endswith("_new")
     start = datetime.now()
     #logfilestring = print(expr[0], start
