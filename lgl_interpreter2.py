@@ -67,7 +67,6 @@ def do_funktion(args, env):
         "name": "funktion",
         "parameter": args[0],
         "aufruf": args[1],
-        "local_frame": None,
     }
 
 @trace_decorator
@@ -90,7 +89,7 @@ def do_ausgeben(args, env):
 
 @trace_decorator
 def do_instanziieren(args, env):
-    konst_count = 0
+    env["const_count"] = 0
     assert len(args) >= 1
     assert isinstance(args[0], str)
     class_name = args[0]
@@ -105,7 +104,6 @@ def do_instanziieren(args, env):
         instance[attribute] = None
     for name, func in class_definition["funktionen"]:
         instance[name] = func
-
     parent_class_name = class_definition["parent"]
     if parent_class_name is not None:
         parent_instance = do_instanziieren([parent_class_name, args[1]], env)
@@ -114,25 +112,20 @@ def do_instanziieren(args, env):
     constructor = class_name in env[class_name + "_new"]
     
     if constructor:
-        konst_count += konstruieren(class_name, args[1:], instance, env)
+        value = konstruieren(class_name, args[1:], instance, env)
+        env["const_count"] += value
 
-    
-    
     return instance
 
 @trace_decorator
 def konstruieren(name, args, instance, env):
     count = 0
     args = args[0]
-    print("name: ",name, "\nargs: ",args, "\ninstance: ",instance, "\n")
-    print("konst_count:  ",konst_count)
-    
-    
+
     for i in instance:
         if instance[i] is None and i != "parent":
             assert len(args) > 0, f"too few arguments for creation of {name}"
-            value = do(args[count + konst_count], env)
-            print("value:    ",value)
+            value = do(args[count + env["const_count"]], env)
             instance[i] = value
             count += 1
     return count
@@ -168,6 +161,7 @@ def do_neue_klasse(args, env):
             else:
                 assert isinstance(curr, str)
                 temp["attribute"].append(curr)
+    env[cname].append(args[0])
     env[args[0]] = temp
 
 @trace_decorator
@@ -264,8 +258,7 @@ def do_aufrufen_klasse(args, env):
         body = methodname["aufruf"]
         result = do(body, env)
         env[curr] = ""
-        return result
-    
+
     else:
         assert len(args) == 3
         result = methodname([classname, args[2]], env)
@@ -375,7 +368,6 @@ def do(expr, env):
 
     assert expr[0] in operations or expr[0].endswith("_new")
     start = datetime.now()
-    #logfilestring = print(expr[0], start
     result = operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
     return result
 

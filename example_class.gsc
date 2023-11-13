@@ -47,12 +47,12 @@
             [
                 "funktion",
                 ["name", "side_length"],
-                [[
+                [
                     "setzen_klasse",
                     "shape",
                     "name",
                     ["abrufen", "a"]
-                ],
+                ,
                 [
                     "setzen_klasse",
                     "square",
@@ -66,10 +66,12 @@
             [
                 "funktion",
                 ["thing"],
-                [
+
                    [ "multiplizieren",
-                    ["abrufen_klasse", ["abrufen", "thing"], "side_length"], ["abrufen_klasse", ["abrufen", "thing"], "side_length"]]
-                ]
+                    ["abrufen_klasse", ["abrufen", "thing"], "side_length"],
+                     ["abrufen_klasse", ["abrufen", "thing"], "side_length"]
+                    ]
+
             ]
         ]
     ],
@@ -86,12 +88,12 @@
             [
                 "funktion",
                 ["a", "radius"],
-                [[
+                [
                     "setzen_klasse",
                     "shape",
                     "name",
                     ["abrufen", "a"]
-                ],
+                ,
                 [
                     "setzen_klasse",
                     "circle",
@@ -133,26 +135,6 @@
 
     ],
   [
-    "shape_new",
-    "Circle Shape",
-    2.5
-  ],
-  [
-    "shape_new",
-    "Square Shape",
-    4.0
-  ],
-  [
-    "setzen",
-    "circle_weight",
-    10
-  ],
-  [
-    "setzen",
-    "sq",
-    20
-  ],
-  [
     "setzen",
     "cir",
     [
@@ -187,9 +169,7 @@
       "aufrufen_klasse",
       "sq",
       "shape_density",
-
-        "sq"
-      , 5
+        "sq", 5
     ]
   ],
   [
