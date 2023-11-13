@@ -119,7 +119,7 @@
     [
         "setzen", "ci_name",
 
-        ["circle_new", "ci", "2"]
+        ["circle_new", "cir", "2"]
 
 
 

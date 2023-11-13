@@ -6,9 +6,12 @@ from datetime import datetime
 from functools import wraps
 
 
+konst_count = 0
+
 ###Define decorator for tracing
 trace_setting = False
 id_counter = 1
+
 def trace_decorator(function):
     global trace_setting
     global id_counter
@@ -60,7 +63,6 @@ def do_multiplizieren(args, env):
 @trace_decorator
 def do_funktion(args, env):
     assert len(args) == 2
-    print(args)
     return {
         "name": "funktion",
         "parameter": args[0],
@@ -78,7 +80,8 @@ def do_dividieren(args, env):
 @trace_decorator
 def do_power(args, env):
     assert len(args) == 2
-    return do(args[0], env) ** do(args[1], env)
+    value = do(args[0], env) 
+    return value ** do(args[1], env) 
 
 @trace_decorator
 def do_ausgeben(args, env):
@@ -87,7 +90,7 @@ def do_ausgeben(args, env):
 
 @trace_decorator
 def do_instanziieren(args, env):
-    env["konstruieren_count"] = 0
+    konst_count = 0
     assert len(args) >= 1
     assert isinstance(args[0], str)
     class_name = args[0]
@@ -109,22 +112,28 @@ def do_instanziieren(args, env):
         instance["parent"] = parent_instance
 
     constructor = class_name in env[class_name + "_new"]
+    
     if constructor:
-        env["konstruieren_count"] += konstruieren(class_name, args[1:], instance, env)
+        konst_count += konstruieren(class_name, args[1:], instance, env)
 
+    
+    
     return instance
 
 @trace_decorator
 def konstruieren(name, args, instance, env):
     count = 0
-
     args = args[0]
-
+    print("name: ",name, "\nargs: ",args, "\ninstance: ",instance, "\n")
+    print("konst_count:  ",konst_count)
+    
+    
     for i in instance:
         if instance[i] is None and i != "parent":
             assert len(args) > 0, f"too few arguments for creation of {name}"
-
-            instance[i] = do(args[count + env["konstruieren_count"]], env)
+            value = do(args[count + konst_count], env)
+            print("value:    ",value)
+            instance[i] = value
             count += 1
     return count
 
@@ -231,23 +240,37 @@ def do_abrufen_klasse(args, env):
     assert isinstance(para, str)
     assert name in env
     assert para in env[name]
-
+    
     return env[name][para]
 
 @trace_decorator
 def do_aufrufen_klasse(args, env):
-    assert len(args) >= 3
+    assert len(args) >= 2
     classname = args[0]
     methodname = find_class_method(classname, args[1], env)
     assert methodname is not None
-
     if isinstance(methodname, dict):
-        result = do_aufrufen(
-            [methodname, args[2:] if len(args) > 3 else args[2]], env
-        )
+        arguments = args[2:]
+        values = [do(arg, env) for arg in arguments]
+        
+        assert isinstance(methodname, dict)
+        assert methodname["name"] == "funktion"
+        func_params = methodname["parameter"]
+        assert len(func_params) == len(values)
+
+        local_frame = dict(zip(func_params, values))
+        curr = "local_frame_of_class"
+        env[curr] = local_frame
+        body = methodname["aufruf"]
+        result = do(body, env)
+        env[curr] = ""
+        return result
+    
     else:
+        assert len(args) == 3
         result = methodname([classname, args[2]], env)
     return result
+
 
 
 # ToDo: pruefen ob in liste of local frames
@@ -255,11 +278,13 @@ def do_aufrufen_klasse(args, env):
 def do_abrufen(args, env):
     assert len(args) == 1
     assert isinstance(args[0], str)
-    assert args[0] in env or args[0] in env["local_frame_of"]
+    assert args[0] in env or args[0] in env["local_frame_of"] or args[0] in env["local_frame_of_class"]
+    
     return (
         do(env[args[0]], env)
-        if args[0] in env
-        else do(env["local_frame_of"][args[0]], env)
+        if args[0] in env 
+        else do(env["local_frame_of"][args[0]], env) if args[0] in env["local_frame_of"]
+        else do(env["local_frame_of_class"][args[0]], env)
     )
 
 @trace_decorator
@@ -292,19 +317,17 @@ def merge_dict(args, env):
 @trace_decorator
 def do_aufrufen(args, env):
     assert len(args) >= 1
-    name = args[0] #do(args[0], env) if isinstance(args[0], list) else args[0]
-    print(name)
+    name = do(args[0], env) if isinstance(args[0], list) else args[0]
     arguments = args[1:]
-    print(arguments)
     values = [do(arg, env) for arg in arguments]
     func = env[name] if isinstance(name, str) else name
+    
+
     assert isinstance(func, dict)
     assert func["name"] == "funktion"
 
     func_params = func["parameter"]
 
-    print(func_params)
-    print(values)
     assert len(func_params) == len(values)
 
     local_frame = dict(zip(func_params, values))
@@ -312,7 +335,7 @@ def do_aufrufen(args, env):
     env[curr] = local_frame
     body = func["aufruf"]
     result = do(body, env)
-    env[curr] = None
+    env[curr] = ""
     return result
 
 @trace_decorator
@@ -334,11 +357,6 @@ def do_abfolge(args, env):
     return result
 
 
-def do_subtrahieren(args, env):
-    assert len(args) == 2
-    return do(args[0], env) - do(args[1], env)
-
-
 operations = {
     name.replace("do_", ""): func
     for (name, func) in globals().items()
@@ -354,18 +372,11 @@ def do(expr, env):
         or isinstance(expr, str)
     ):
         return expr
-    
-    ##added this to help with bugfixxing
-    print("Current expression:", expr[0])
-    print("Available operations:", operations.keys())
-    assert expr[0] in operations or expr[0].endswith("_new"), f"Invalid operation: {expr[0]}"
-    ##end of this
 
     assert expr[0] in operations or expr[0].endswith("_new")
     start = datetime.now()
     #logfilestring = print(expr[0], start
     result = operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
-    #print(expr[0], func, time.time() - start
     return result
 
 
@@ -388,6 +399,8 @@ def main():
         program = json.load(source_file)
     assert isinstance(program, list)
     env = {}
+    env["local_frame_of"] = ""
+    env["local_frame_of_class"] = ""
     result = do(program, env)
     print(f"=> {result}")
 
