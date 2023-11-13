@@ -12,14 +12,15 @@ konst_count = 0
 trace_setting = False
 id_counter = 1
 
+
 def trace_decorator(function):
     global trace_setting
     global id_counter
     if trace_setting:
-        with open('trace_file.log', mode='w', newline='') as file:
+        with open("trace_file.log", mode="w", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(['id', 'function_name', 'event', 'timestamp'])
-            
+            writer.writerow(["id", "function_name", "event", "timestamp"])
+
     @wraps(function)
     def wrapper(*args, **kwargs):
         global trace_setting
@@ -27,15 +28,34 @@ def trace_decorator(function):
         if trace_setting:
             id = id_counter
             id_counter += 1
-            with open('trace_file.log', mode='a', newline='') as file:
+            with open("trace_file.log", mode="a", newline="") as file:
                 writer = csv.writer(file)
-                new_function_name = function.__name__[3:] if function.__name__.startswith("do_") else function.__name__
-                writer.writerow([id,new_function_name, 'start', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
+                new_function_name = (
+                    function.__name__[3:]
+                    if function.__name__.startswith("do_")
+                    else function.__name__
+                )
+                writer.writerow(
+                    [
+                        id,
+                        new_function_name,
+                        "start",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    ]
+                )
                 result = function(*args, **kwargs)
-                writer.writerow([id,new_function_name, 'stop', datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")])
+                writer.writerow(
+                    [
+                        id,
+                        new_function_name,
+                        "stop",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    ]
+                )
                 return result
         else:
             return function(*args, **kwargs)
+
     return wrapper
 
 
@@ -45,20 +65,24 @@ def do_addieren(args, env):
     assert len(args) == 2
     return do(args[0], env) + do(args[1], env)
 
+
 @trace_decorator
 def do_absolutwert(args, env):
     assert len(args) == 1
     return abs(do(args[0], env))
+
 
 @trace_decorator
 def do_differenz(args, env):
     assert len(args) == 2
     return do(args[0], env) - do(args[1], env)
 
+
 @trace_decorator
 def do_multiplizieren(args, env):
     assert len(args) == 2
     return do(args[0], env) * do(args[1], env)
+
 
 @trace_decorator
 def do_funktion(args, env):
@@ -69,6 +93,7 @@ def do_funktion(args, env):
         "aufruf": args[1],
     }
 
+
 @trace_decorator
 def do_dividieren(args, env):
     assert len(args) == 2
@@ -76,16 +101,19 @@ def do_dividieren(args, env):
     assert right != 0
     return do(args[0], env) / right
 
+
 @trace_decorator
 def do_power(args, env):
     assert len(args) == 2
-    value = do(args[0], env) 
-    return value ** do(args[1], env) 
+    value = do(args[0], env)
+    return value ** do(args[1], env)
+
 
 @trace_decorator
 def do_ausgeben(args, env):
     assert len(args) == 1
     print(do(args[0], env))
+
 
 @trace_decorator
 def do_instanziieren(args, env):
@@ -110,12 +138,13 @@ def do_instanziieren(args, env):
         instance["parent"] = parent_instance
 
     constructor = class_name in env[class_name + "_new"]
-    
+
     if constructor:
         value = konstruieren(class_name, args[1:], instance, env)
         env["const_count"] += value
 
     return instance
+
 
 @trace_decorator
 def konstruieren(name, args, instance, env):
@@ -129,6 +158,7 @@ def konstruieren(name, args, instance, env):
             instance[i] = value
             count += 1
     return count
+
 
 @trace_decorator
 def do_neue_klasse(args, env):
@@ -164,11 +194,13 @@ def do_neue_klasse(args, env):
     env[cname].append(args[0])
     env[args[0]] = temp
 
+
 @trace_decorator
 def do_solange(args, env):
     assert len(args) == 2
     while eval(" ".join([str(do(val, env)) for val in args[0]])):
         do(args[1], env)
+
 
 @trace_decorator
 def get_index(args, env):
@@ -177,6 +209,7 @@ def get_index(args, env):
     assert isinstance(index, int) and index < env[args[0]]["size"] and index >= 0
     return env[args[0]]["array"][index]
 
+
 @trace_decorator
 def set_index(args, env):
     assert len(args) == 2
@@ -184,6 +217,7 @@ def set_index(args, env):
     l = [do(arg, env) for arg in args[1]]
     assert args[0] in env
     env[args[0]]["array"][l[0]] = l[1]
+
 
 @trace_decorator
 def do_array(args, env):
@@ -196,6 +230,7 @@ def do_array(args, env):
         "get": get_index,
         "set": set_index,
     }
+
 
 @trace_decorator
 def do_dictionary(args, env):
@@ -212,11 +247,13 @@ def do_dictionary(args, env):
         "merge": merge_dict,
     }
 
+
 @trace_decorator
 def do_setzen(args, env):
     assert len(args) == 2
     assert isinstance(args[0], str)
     env[args[0]] = do(args[1], env)
+
 
 @trace_decorator
 def do_setzen_klasse(args, env):
@@ -225,17 +262,19 @@ def do_setzen_klasse(args, env):
     assert isinstance(args[1], str)
     env[args[0]][args[1]] = do(args[2], env)
 
+
 @trace_decorator
 def do_abrufen_klasse(args, env):
     assert len(args) == 2
-    name = do(args[0],env)
+    name = do(args[0], env)
     para = do(args[1], env)
     assert isinstance(name, str)
     assert isinstance(para, str)
     assert name in env
     assert para in env[name]
-    
+
     return env[name][para]
+
 
 @trace_decorator
 def do_aufrufen_klasse(args, env):
@@ -246,7 +285,7 @@ def do_aufrufen_klasse(args, env):
     if isinstance(methodname, dict):
         arguments = args[2:]
         values = [do(arg, env) for arg in arguments]
-        
+
         assert isinstance(methodname, dict)
         assert methodname["name"] == "funktion"
         func_params = methodname["parameter"]
@@ -265,20 +304,24 @@ def do_aufrufen_klasse(args, env):
     return result
 
 
-
-# ToDo: pruefen ob in liste of local frames
 @trace_decorator
 def do_abrufen(args, env):
     assert len(args) == 1
     assert isinstance(args[0], str)
-    assert args[0] in env or args[0] in env["local_frame_of"] or args[0] in env["local_frame_of_class"]
-    
+    assert (
+        args[0] in env
+        or args[0] in env["local_frame_of"]
+        or args[0] in env["local_frame_of_class"]
+    )
+
     return (
         do(env[args[0]], env)
-        if args[0] in env 
-        else do(env["local_frame_of"][args[0]], env) if args[0] in env["local_frame_of"]
+        if args[0] in env
+        else do(env["local_frame_of"][args[0]], env)
+        if args[0] in env["local_frame_of"]
         else do(env["local_frame_of_class"][args[0]], env)
     )
+
 
 @trace_decorator
 def get_keyval(args, env):
@@ -287,6 +330,7 @@ def get_keyval(args, env):
     key = do(args[1], env)
     return env[args[0]]["dictionary"][key]
 
+
 @trace_decorator
 def set_keyval(args, env):
     assert len(args) == 2
@@ -294,6 +338,7 @@ def set_keyval(args, env):
     l = [do(arg, env) for arg in args[1]]
     assert args[0] in env
     env[args[0]]["dictionary"][l[0]] = l[1]
+
 
 @trace_decorator
 def merge_dict(args, env):
@@ -306,7 +351,6 @@ def merge_dict(args, env):
     return d | od
 
 
-# ToDo: aufrufen nested functions, ideas for putting functionscope in env , myb list of dictionaries
 @trace_decorator
 def do_aufrufen(args, env):
     assert len(args) >= 1
@@ -314,7 +358,6 @@ def do_aufrufen(args, env):
     arguments = args[1:]
     values = [do(arg, env) for arg in arguments]
     func = env[name] if isinstance(name, str) else name
-    
 
     assert isinstance(func, dict)
     assert func["name"] == "funktion"
@@ -331,6 +374,7 @@ def do_aufrufen(args, env):
     env[curr] = ""
     return result
 
+
 @trace_decorator
 def find_class_method(name, method_name, env):
     if method_name in env[name]:
@@ -341,6 +385,7 @@ def find_class_method(name, method_name, env):
     while curr is not None and method_name not in curr:
         curr = curr["parent"]
     return curr[method_name] if curr is not None else None
+
 
 @trace_decorator
 def do_abfolge(args, env):
@@ -367,26 +412,33 @@ def do(expr, env):
         return expr
 
     assert expr[0] in operations or expr[0].endswith("_new")
-    start = datetime.now()
-    result = operations[expr[0]](expr[1:], env) if expr[0] in operations else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
+    result = (
+        operations[expr[0]](expr[1:], env)
+        if expr[0] in operations
+        else do_instanziieren([expr[0].replace("_new", ""), expr[1:]], env)
+    )
     return result
 
 
 ###Entry point to script
 def main():
-    parser = argparse.ArgumentParser(description="Interpret .gsc files with optional tracing.")
+    parser = argparse.ArgumentParser(
+        description="Interpret .gsc files with optional tracing."
+    )
     parser.add_argument("filename", type=str, help="The .gsc file to interpret")
-    parser.add_argument("--trace", type=str, help="Enable tracing and specify the trace file.")
+    parser.add_argument(
+        "--trace", type=str, help="Enable tracing and specify the trace file."
+    )
     args = parser.parse_args()
 
     global trace_setting
     if args.trace:
         trace_setting = True
         # If tracing is enabled, write the header to the log file.
-        with open('trace_file.log', mode='w', newline='') as file:
+        with open("trace_file.log", mode="w", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(['id', 'function_name', 'event', 'timestamp'])
-        
+            writer.writerow(["id", "function_name", "event", "timestamp"])
+
     with open(args.filename, "r") as source_file:
         program = json.load(source_file)
     assert isinstance(program, list)
@@ -395,6 +447,7 @@ def main():
     env["local_frame_of_class"] = ""
     result = do(program, env)
     print(f"=> {result}")
+
 
 if __name__ == "__main__":
     main()
