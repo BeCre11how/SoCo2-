@@ -24,12 +24,12 @@
                 ["thing", "weight"],
                 [
                 "dividieren",
+                ["abrufen", "weight"],
                 ["aufrufen", ["abrufen_klasse",
                  ["abrufen", "thing"],
                  "area"
                 ], ["abrufen", "thing"]
                 ]
-                ,["abrufen", "weight"]
                 ]
             ]
         ]
@@ -140,7 +140,7 @@
     [
       "circle_new",
       "Circle Shape",
-      2.5
+      2
     ]
   ],
   [
@@ -149,7 +149,7 @@
     [
       "square_new",
       "Square Shape",
-      4.0
+      3
     ]
   ],
   [
