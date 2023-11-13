@@ -6,7 +6,6 @@ from datetime import datetime
 from functools import wraps
 
 
-konst_count = 0
 
 ###Define decorator for tracing
 trace_setting = False
