@@ -8,13 +8,14 @@ from functools import wraps
 ###Define decorator for tracing
 trace_setting = False
 id_counter = 1
+trace_file_name = "trace_file.log"
 
 
 def trace_decorator(function):
     global trace_setting
     global id_counter
     if trace_setting:
-        with open("trace_file.log", mode="w", newline="") as file:
+        with open(trace_file_name, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["id", "function_name", "event", "timestamp"])
 
@@ -25,7 +26,7 @@ def trace_decorator(function):
         if trace_setting:
             id = id_counter
             id_counter += 1
-            with open("trace_file.log", mode="a", newline="") as file:
+            with open(trace_file_name, mode="a", newline="") as file:
                 writer = csv.writer(file)
                 new_function_name = (
                     function.__name__[3:]
@@ -440,14 +441,23 @@ def main():
     )
     parser.add_argument("filename", type=str, help="The .gsc file to interpret")
     parser.add_argument(
-        "--trace", type=str, help="Enable tracing and specify the trace file."
+        "--trace", nargs='?', const=True, type=str, 
+        help="Enable tracing and optionally specify the trace file."
     )
     args = parser.parse_args()
 
     global trace_setting
+    global trace_file_name
+    
     if args.trace:
         trace_setting = True
-        with open("trace_file.log", mode="w", newline="") as file:
+        if type(args.trace) == str:
+            if not args.trace.endswith('.log'):
+                raise ValueError("Trace file must end with '.log'")
+            else:
+                trace_file_name = args.trace
+    
+        with open(trace_file_name, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["id", "function_name", "event", "timestamp"])
 
