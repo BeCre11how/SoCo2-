@@ -5,8 +5,6 @@ import csv
 from datetime import datetime
 from functools import wraps
 
-
-
 ###Define decorator for tracing
 trace_setting = False
 id_counter = 1
@@ -234,6 +232,7 @@ def do_array(args, env):
 @trace_decorator
 def do_dictionary(args, env):
     assert len(args) >= 0
+    assert len(args)%2 == 0
     return {
         "name": "dictionary",
         "dictionary": {
@@ -393,14 +392,14 @@ def do_abfolge(args, env):
         result = do(operation, env)
     return result
 
-
+##Find all operations from the script
 operations = {
     name.replace("do_", ""): func
     for (name, func) in globals().items()
     if name.startswith("do_")
 }
 
-
+##Execute all operations from the script and the ones added from the language file.
 def do(expr, env):
     if (
         isinstance(expr, int)
@@ -433,7 +432,6 @@ def main():
     global trace_setting
     if args.trace:
         trace_setting = True
-        # If tracing is enabled, write the header to the log file.
         with open("trace_file.log", mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["id", "function_name", "event", "timestamp"])
