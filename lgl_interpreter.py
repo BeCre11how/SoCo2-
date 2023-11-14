@@ -366,10 +366,18 @@ def do_aufrufen(args, env):
 
     local_frame = dict(zip(func_params, values))
     curr = "local_frame_of"
-    env[curr] = local_frame
+    if env[curr] == "":
+        env[curr] = local_frame
+    else:
+        for k, v in local_frame.items():
+            env[curr][k] = v
     body = func["aufruf"]
     result = do(body, env)
-    env[curr] = ""
+    if len(env[curr]) == len(func_params):
+        env[curr] = ""
+    else:
+        for i in func_params:
+            env[curr].pop(i)
     return result
 
 
