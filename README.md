@@ -69,8 +69,11 @@ To execute a program written in the custom JSON-based language, run the followin
 
 `python lgl_interpreter.py filename.gsc` 
 
-To execute the program with tracing enabled use (replace filename.gsc with your filename, trace_file.log with your log file name):
-`python lgl_interpreter.py filename.gsc --trace trace_file.log` 
+To execute the program with tracing enabled use:
+`python lgl_interpreter.py filename.gsc --trace`
+
+`--trace` defaults to the filename `trace_file.log` for a different filename use:
+`python lgl_interpreter.py filename.gsc --trace [your-file-name].log`
 
 The JSON file should define a list of operations in the form:
 
@@ -105,7 +108,7 @@ This Python script reads a trace file, output by the `lgl_interpreter.py` when r
 - `main(trace_file_path)`: Entry point to the script. Calls the above functions in sequence and prints the final report.
 
 ## Usage
-To run the script, use the following command (replace trace_file.log with your log file name):
+To run the script, use the following command (`reporting.py` requires the specification of a trace file, replace `trace_file.log` for different trace files):
 
 `python reporting.py trace_file.log`
 
