@@ -1,5 +1,3 @@
-//do not change: files was provided by exercise
-
 [
     "seq",
     ["set", "get_cube_power", ["func", "x", ["power", ["get", "x"], 3]]],
