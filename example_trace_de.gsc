@@ -1,6 +1,6 @@
 [
     "abfolge",
-    ["setzen", "get_cube_power", ["funktion", "x", ["power", ["aufrufen", "x"], 3]]],
-    ["setzen", "add_cubes", ["funktion", ["a", "b"], ["addieren", ["abrufen", "get_cube_power", ["aufrufen", "a"]],  ["abrufen", "get_cube_power", ["aufrufen", "b"]] ]]],
-    ["abrufen", "add_cubes", 3, 2]
+    ["setzen", "get_cube_power", ["funktion", "x", ["power", ["abrufen", "x"], 3]]],
+    ["setzen", "add_cubes", ["funktion", ["a", "b"], ["addieren", ["aufrufen", "get_cube_power", ["abrufen", "a"]],  ["aufrufen", "get_cube_power", ["abrufen", "b"]] ]]],
+    ["aufrufen", "add_cubes", 3, 2]
 ]
